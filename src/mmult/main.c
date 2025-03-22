@@ -105,7 +105,7 @@ void get_dataset_dims(const char *name, size_t *M, size_t *N, size_t *P)
 void load_matrix_2D(const char* filename, float* matrix, size_t rows, size_t cols) {
   FILE* f = fopen(filename, "rb");
   if (!f) {
-      printf("❌ Error opening %s\n", filename);
+      printf("Error opening %s\n", filename);
       exit(1);
   }
   fread(matrix, sizeof(float), rows * cols, f);
@@ -129,7 +129,7 @@ bool compare_2D(float A[MAX_M][MAX_P], float B[MAX_M][MAX_P], size_t M, size_t P
   return true;
 }
 
-const int SIZE_DATA = 4 * 1024 * 1024;
+//const int SIZE_DATA = 4 * 1024 * 1024;
 
 int main(int argc, char **argv)
 {
@@ -144,7 +144,7 @@ int main(int argc, char **argv)
   int nstdevs = 3;
 
   /* Data */
-  int data_size = SIZE_DATA;
+  //int data_size = SIZE_DATA;
 
   /* Dataset */
   const char *dataset_str = "testing";
@@ -200,7 +200,7 @@ int main(int argc, char **argv)
     if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--size") == 0)
     {
       assert(++i < argc);
-      data_size = atoi(argv[i]);
+      //data_size = atoi(argv[i]);
 
       continue;
     }
@@ -280,7 +280,7 @@ int main(int argc, char **argv)
     printf("    -d | --dataset   Select dataset from: testing, small, medium, large, native\n (default = %s)\n", dataset_str);
     printf("    -n | --nthreads  Set number of threads available (default = %d)\n", nthreads);
     printf("    -c | --cpu       Set the main CPU for the program (default = %d)\n", cpu);
-    printf("    -s | --size      Size of input and output data (default = %d)\n", data_size);
+    //printf("    -s | --size      Size of input and output data (default = %d)\n", data_size);
     printf("         --nruns     Number of runs to the implementation (default = %d)\n", nruns);
     printf("         --stdevs    Number of standard deviation to exclude outliers (default = %d)\n", nstdevs);
     printf("\n");
