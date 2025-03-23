@@ -8,10 +8,10 @@ Created on Sat Mar 22 11:30:49 2025
 import numpy as np
 import os
 
-# Get the current working directory (should be where you're running the script)
+# Get the current working directory
 cwd = os.getcwd()
 
-# Dataset configurations
+# Dataset configurations as stated in the assignment document
 datasets = {
     "testing": (16, 12, 8),
     "small": (121, 180, 115),

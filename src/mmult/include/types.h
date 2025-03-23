@@ -10,8 +10,8 @@
  #define __INCLUDE_TYPES_H_
  
  typedef struct {
-   byte*   input;
-   byte*   output;
+   byte*   input; // A followed by B
+   byte*   output; // R
  
    size_t size_m; // M number of rows in Matrix A and R
    size_t size_n; // N number of rows in Matrix B and N columns in matrix A
