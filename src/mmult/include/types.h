@@ -22,5 +22,6 @@ typedef struct
   size_t size_p; // P number of columns in Matrix B and R
   int cpu;
   int nthreads;
+  int batch_size;
 } args_t;
 #endif //__INCLUDE_TYPES_H_

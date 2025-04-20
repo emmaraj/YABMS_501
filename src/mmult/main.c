@@ -156,7 +156,7 @@ int main(int argc, char **argv)
 
   /* Data */
   // int data_size = SIZE_DATA;
-  int batch_size = 4;
+  int batch_size = 1;
 
   /* Dataset */
   const char *dataset_str = "testing";
@@ -263,6 +263,14 @@ int main(int argc, char **argv)
     {
       dataset_str = argv[++i];
     }
+    /* Batch Size selection */
+    if (strcmp(argv[i], "-b") == 0 || strcmp(argv[i], "--batch_size") == 0)
+    {
+      assert(++i < argc);
+      batch_size = atoi(argv[i]);
+
+      continue;
+    }
   }
 
   if (help || impl == NULL)
@@ -291,6 +299,7 @@ int main(int argc, char **argv)
     printf("    -h | --help      Print this message\n");
     printf("    -d | --dataset   Select dataset from: testing, small, medium, large, native\n (default = %s)\n", dataset_str);
     printf("    -n | --nthreads  Set number of threads available (default = %d)\n", nthreads);
+    printf("    -b | --batch_zie Set number of batch size (default = %d)\n", batch_size);
     printf("    -c | --cpu       Set the main CPU for the program (default = %d)\n", cpu);
     // printf("    -s | --size      Size of input and output data (default = %d)\n", data_size);
     printf("         --nruns     Number of runs to the implementation (default = %d)\n", nruns);
@@ -425,7 +434,8 @@ int main(int argc, char **argv)
       .size_n = N,
       .size_p = P,
       .cpu = cpu,
-      .nthreads = nthreads};
+      .nthreads = nthreads,
+      .batch_size = batch_size};
 
   /* Running the reference function */
   impl_ref(&args_ref);
@@ -438,7 +448,8 @@ int main(int argc, char **argv)
       .size_n = N,
       .size_p = P,
       .cpu = cpu,
-      .nthreads = nthreads};
+      .nthreads = nthreads,
+      .batch_size = batch_size};
 
   /* Start execution */
   printf("Running '%s' on dataset '%s'...\n", impl_str, dataset_str);
