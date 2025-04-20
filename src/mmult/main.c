@@ -57,12 +57,12 @@
 #include "include/types.h"
 
 /* Max dataset dimensions for static allocation */
-#define MAX_M 2500 // Maximum value for M which is for native dataset
-#define MAX_N 3000 // Maximum value for N which is for native dataset
-#define MAX_P 2100 // Maximum value for P which is for native dataset
+// #define MAX_M 2500 // Maximum value for M which is for native dataset
+// #define MAX_N 3000 // Maximum value for N which is for native dataset
+// #define MAX_P 2100 // Maximum value for P which is for native dataset
 
 /* Get dataset dimensions based on selection*/
-void get_dataset_dims(const char *name, size_t *M, size_t *N, size_t *P)
+bool get_dataset_dims(const char *name, size_t *M, size_t *N, size_t *P)
 {
   if (strcmp(name, "testing") == 0)
   {
@@ -95,36 +95,44 @@ void get_dataset_dims(const char *name, size_t *M, size_t *N, size_t *P)
     *P = 2100;
   }
   else
-  {
-    printf("Unknown dataset name: %s\n", name);
-    exit(1);
-  }
+    return false;
+  return true;
 }
 
 /* Load binary matrix into 2D array */
 void load_matrix_2D(const char *filename, float *matrix, size_t rows, size_t cols)
 {
-  FILE *f = fopen(filename, "rb");
-  if (!f)
+  FILE *file = fopen(filename, "rb");
+  if (!file)
   {
     printf("Error opening %s\n", filename);
     exit(1);
   }
-  fread(matrix, sizeof(float), rows * cols, f);
-  printf("FILE %s read", filename)
-  fclose(f);
+  // (void) fread(matrix, sizeof(float), rows * cols, file);
+  size_t expected = rows * cols;
+  size_t read = fread(matrix, sizeof(float), expected, file);
+
+  if (read != expected)
+  {
+    printf("❌ Error: only read %zu of %zu elements from %s\n", read, expected, filename);
+    fclose(file);
+    exit(EXIT_FAILURE);
+  }
+  printf("\n\nFILE %s read\n\n\n", filename);
+  fclose(file);
 }
 
 // Compares two 2D matrices element-by-element with a tolerance threshold.
-bool compare_2D(float A[MAX_M][MAX_P], float B[MAX_M][MAX_P], size_t M, size_t P, float delta)
+bool compare_2D(float *A, float *B, size_t M, size_t P, float delta)
 {
   for (size_t i = 0; i < M; i++)
   {
     for (size_t j = 0; j < P; j++)
     {
-      if (fabs(A[i][j] - B[i][j]) > delta)
+      size_t idx = i * P + j;
+      if (fabs(A[idx] - B[idx]) > delta)
       {
-        printf("Mismatch at [%zu][%zu]: %f != %f\n", i, j, A[i][j], B[i][j]);
+        printf("Mismatch at [%zu][%zu]: %f != %f\n", i, j, A[idx], B[idx]);
         return false;
       }
     }
@@ -250,7 +258,7 @@ int main(int argc, char **argv)
 
       continue;
     }
-
+    /* Dataset selection */
     if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--dataset") == 0)
     {
       dataset_str = argv[++i];
@@ -361,15 +369,24 @@ int main(int argc, char **argv)
 
   // Matrix rows and columns
   size_t M, N, P;
+  if (!get_dataset_dims(dataset_str, &M, &N, &P))
+  {
+    printf("❌ Invalid dataset: %s\n", dataset_str);
+    return 1;
+  }
 
   // Statically allocated matrices
-  static float matrix_A[MAX_M][MAX_N];
-  static float matrix_B[MAX_N][MAX_P];
-  static float matrix_R[MAX_M][MAX_P];
-  static float matrix_R_ref[MAX_M][MAX_P];
+  // static float matrix_A[MAX_M][MAX_N];
+  // static float matrix_B[MAX_N][MAX_P];
+  // static float matrix_R[MAX_M][MAX_P];
+  // static float matrix_R_ref[MAX_M][MAX_P];
 
   /* Datasets */
   /* Allocation and initialization */
+  float *matrix_A = __ALLOC_INIT_DATA(float, (M * N));
+  float *matrix_B = __ALLOC_INIT_DATA(float, (N * P));
+  float *matrix_R_ref = __ALLOC_INIT_DATA(float, (M * P + 1));
+  float *matrix_R = __ALLOC_DATA(float, (M * P + 1));
 
   // Load data
   char fname[64];
@@ -377,7 +394,7 @@ int main(int argc, char **argv)
   load_matrix_2D(fname, matrix_A, M, N);
 
   snprintf(fname, sizeof(fname), "src/dataset/B_%s.bin", dataset_str);
-  load_matrix_2D(fname, (float (*)[MAX_N])matrix_B, N, P); // cast to match expected type
+  load_matrix_2D(fname, matrix_B, N, P); //
 
   snprintf(fname, sizeof(fname), "src/dataset/R_%s_gold.bin", dataset_str);
   load_matrix_2D(fname, matrix_R_ref, M, P);
@@ -389,7 +406,7 @@ int main(int argc, char **argv)
 
   // Set guard on output buffer
   __SET_GUARD(matrix_R, M * P * sizeof(float));
-
+  __SET_GUARD(matrix_R_ref, M * P * sizeof(float));
   /* Generate ref data */
   /* Arguments for the functions */
   // args_t args_ref = {
@@ -413,6 +430,16 @@ int main(int argc, char **argv)
   /* Running the reference function */
   impl_ref(&args_ref);
 
+  args_t args_run = {
+      .matrix_A = matrix_A,
+      .matrix_B = matrix_B,
+      .matrix_R = matrix_R,
+      .size_m = M,
+      .size_n = N,
+      .size_p = P,
+      .cpu = cpu,
+      .nthreads = nthreads};
+
   /* Start execution */
   printf("Running '%s' on dataset '%s'...\n", impl_str, dataset_str);
 
@@ -422,7 +449,7 @@ int main(int argc, char **argv)
     __SET_START_TIME();
     for (int j = 0; j < 16; j++)
     {
-      (*impl)(&args_ref);
+      (*impl)(&args_run);
     }
     __SET_END_TIME();
     runtimes[i] = __CALC_RUNTIME() / 16;
@@ -435,6 +462,7 @@ int main(int argc, char **argv)
   // bool guard = __CHECK_GUARD(dest, data_size);
 
   bool match = compare_2D(matrix_R, matrix_R_ref, M, P, 1e-3);
+  // bool match = compare_2D(&matrix_R[0][0], &matrix_R_ref[0][0], M, P, 1e-3);
   bool guard = __CHECK_GUARD(matrix_R, M * P * sizeof(float));
   if (match && guard)
   {
