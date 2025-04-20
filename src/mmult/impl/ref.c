@@ -19,5 +19,6 @@
 /* Reference Implementation */
 void* impl_ref(void* args)
 {
+  printf("***********************\nIN REF\n*****************************");
   return NULL;
 }

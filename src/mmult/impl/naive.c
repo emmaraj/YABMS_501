@@ -30,9 +30,9 @@ void *impl_scalar_naive(void *args)
   register size_t P = parsed_args->size_p;
 
   // Cast buffers to 2D float arrays
-  register float *matrix_A = (float *)parsed_args->input;
-  register float *matrix_B = (float *)(parsed_args->input + (M * N * sizeof(float)));
-  register float *matrix_R = (float *)parsed_args->output;
+  register const float *matrix_A =  (const float*)parsed_args->matrix_A;
+  register const float *matrix_B =  (const float*)parsed_args->matrix_B;
+  register float *matrix_R = (float*)parsed_args->matrix_R;
 
   // Compute R = A × B
   for (register size_t i = 0; i < M; i++)
@@ -43,11 +43,12 @@ void *impl_scalar_naive(void *args)
       for (register size_t k = 0; k < N; k++)
       {
         sum += matrix_A[i * N + k] * matrix_B[k * P + j];
+        printf("######################################\nMultiplication Ongoing\n######################################\n");
       }
       matrix_R[i * P + j] = sum;
     }
   }
-
+  printf("Multiplication Finished\n");
   return NULL;
 }
 #pragma GCC pop_options
