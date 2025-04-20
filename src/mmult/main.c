@@ -55,12 +55,27 @@
 
 /* Include application-specific headers */
 #include "include/types.h"
-
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 /* Max dataset dimensions for static allocation */
 // #define MAX_M 2500 // Maximum value for M which is for native dataset
 // #define MAX_N 3000 // Maximum value for N which is for native dataset
 // #define MAX_P 2100 // Maximum value for P which is for native dataset
 
+/* Create folder to store results */
+void prepare_filename(char *filename, const char *dataset_name, const char *impl_str, int num_runs)
+{
+  // Create "results" directory if it doesn't exist
+  struct stat st = {0};
+  if (stat("results", &st) == -1)
+  {
+    mkdir("results", 0755); // rwxr-xr-x permissions
+  }
+
+  // Format filename with path
+  snprintf(filename, 256, "results/%s_%s_%d_runtimes.csv", dataset_name, impl_str, num_runs);
+}
 /* Get dataset dimensions based on selection*/
 bool get_dataset_dims(const char *name, size_t *M, size_t *N, size_t *P)
 {
@@ -587,9 +602,14 @@ int main(int argc, char **argv)
   /* Dump */
   printf("  * Dumping runtime informations:\n");
   FILE *fp;
+  // char filename[256];
+  // strcpy(filename, impl_str);
+  // strcat(filename, "_runtimes.csv");
+  //   char filename[256];
+  // snprintf(filename, sizeof(filename), "results/%s_%s_%d_runtimes.csv", dataset_str, impl_str, nruns);
   char filename[256];
-  strcpy(filename, impl_str);
-  strcat(filename, "_runtimes.csv");
+  prepare_filename(filename, dataset_str, impl_str, nruns);
+
   printf("    - Filename: %s\n", filename);
   printf("    - Opening file .... ");
   fp = fopen(filename, "w");
